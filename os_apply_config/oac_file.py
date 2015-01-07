@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import grp
-import pwd
+import platform
+
+if platform.system() != "Windows":
+    import grp
+    import pwd
 
 import six
 
@@ -99,8 +102,7 @@ class OacFile(object):
         """The UID to set on the file, EG 'rabbitmq' or '501'."""
         return self._owner
 
-    @owner.setter
-    def owner(self, v):
+    def _nix_owner(self, v):
         """Pass in the UID to set on the file.
 
         EG 'rabbitmq' or 501.
@@ -118,13 +120,22 @@ class OacFile(object):
                 "owner '%s' not found in passwd database" % v)
         self._owner = user[2]
 
+    def _win_owner(self, v):
+        pass
+
+    @owner.setter
+    def owner(self, v):
+        if platform.sysytem() == "Windows":
+            self._win_owner(v)
+        else:
+            self._nix_owner(v)
+
     @property
     def group(self):
         """The GID to set on the file, EG 'rabbitmq' or '501'."""
         return self._group
 
-    @group.setter
-    def group(self, v):
+    def _nix_grp(self, v):
         """Pass in the GID to set on the file.
 
         EG 'rabbitmq' or 501.
@@ -141,3 +152,14 @@ class OacFile(object):
             raise exc.ConfigException(
                 "group '%s' not found in group database" % v)
         self._group = group[2]
+
+    def _win_grp(self, v):
+        pass
+
+    @group.setter
+    def group(self, v):
+        if platform.system() == "Windows":
+            self._win_grp(v)
+        else:
+            self._nix_grp(v)
+        

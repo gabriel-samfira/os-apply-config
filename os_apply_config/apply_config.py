@@ -30,8 +30,7 @@ from os_apply_config import oac_file
 from os_apply_config import renderers
 from os_apply_config import value_types
 from os_apply_config import version
-
-DEFAULT_TEMPLATES_DIR = '/usr/libexec/os-apply-config/templates'
+from os_apply_config.paths import DEFAULT_TEMPLATES_DIR, DEFAULT_OS_CONFIG_FILES_PATH, OS_CONFIG_FILES_PATH_OLD
 
 
 def templates_dir():
@@ -61,8 +60,7 @@ def templates_dir():
 
 TEMPLATES_DIR = templates_dir()
 OS_CONFIG_FILES_PATH = os.environ.get(
-    'OS_CONFIG_FILES_PATH', '/var/lib/os-collect-config/os_config_files.json')
-OS_CONFIG_FILES_PATH_OLD = '/var/run/os-collect-config/os_config_files.json'
+    'OS_CONFIG_FILES_PATH', DEFAULT_OS_CONFIG_FILES_PATH)
 
 CONTROL_FILE_SUFFIX = ".oac"
 
@@ -346,8 +344,8 @@ def add_handler(logger, handler):
 logger = logging.getLogger('os-apply-config')
 logger.setLevel(logging.INFO)
 add_handler(logger, logging.StreamHandler())
-if os.geteuid() == 0:
-    add_handler(logger, logging.FileHandler('/var/log/os-apply-config.log'))
+# if os.geteuid() == 0:
+#     add_handler(logger, logging.FileHandler('/var/log/os-apply-config.log'))
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
