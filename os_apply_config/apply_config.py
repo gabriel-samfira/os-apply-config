@@ -17,6 +17,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import platform
 import subprocess
 import sys
@@ -148,7 +149,9 @@ def write_file(path, obj):
         # On Windows executable templates will have an executable
         # extensions. We strip that away.
         path = sanitize_file(path)
-        os.rename(newfile.name, path)
+        # shutil.move() overwrites target on windows. os.rename will throw an exception
+        # if target already exists
+        shutil.move(newfile.name, path)
 
 
 def build_tree(templates, config):
@@ -195,7 +198,16 @@ def render_moustache(text, config):
 
 
 def render_executable(path, config):
-    p = subprocess.Popen([path],
+    args = []
+    if platform.system() == "Windows" and path.lower().endswith(".ps1"):
+        args.extend(
+            ["powershell.exe",
+             "-noninteractive",
+             "-ExecutionPolicy",
+             "RemoteSigned",
+             "-File"])
+    args.append(path)
+    p = subprocess.Popen(args,
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)

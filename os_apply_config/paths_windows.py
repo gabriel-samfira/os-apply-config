@@ -13,6 +13,7 @@ DEFAULT_OUTPUT = os.path.join(os.environ.get("SYSTEMDRIVE", "C:"), os.sep)
 def _has_exec_ext(path):
     path = path.lower()
     extensions = os.environ.get("PATHEXT", "").split(os.pathsep)
+    extensions.append(".ps1")
     for i in extensions:
         if path.endswith(i.lower()):
             return (True, i.lower())
