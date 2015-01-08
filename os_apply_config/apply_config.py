@@ -17,6 +17,7 @@ import argparse
 import json
 import logging
 import os
+import platform
 import subprocess
 import sys
 import tempfile
@@ -30,7 +31,12 @@ from os_apply_config import oac_file
 from os_apply_config import renderers
 from os_apply_config import value_types
 from os_apply_config import version
-from os_apply_config.paths import DEFAULT_TEMPLATES_DIR, DEFAULT_OS_CONFIG_FILES_PATH, OS_CONFIG_FILES_PATH_OLD
+from os_apply_config.paths import (DEFAULT_TEMPLATES_DIR,
+                                   DEFAULT_OS_CONFIG_FILES_PATH,
+                                   OS_CONFIG_FILES_PATH_OLD,
+                                   DEFAULT_OUTPUT,
+                                   is_executable,
+                                   sanitize_file)
 
 
 def templates_dir():
@@ -133,8 +139,15 @@ def write_file(path, obj):
         if type(obj.body) == str:
             obj.body = obj.body.encode('utf-8')
         newfile.write(obj.body)
-        os.chmod(newfile.name, mode)
-        os.chown(newfile.name, uid, gid)
+        if platform.system() != "Windows":
+            os.chmod(newfile.name, mode)
+            os.chown(newfile.name, uid, gid)
+        # Windows cannot remove a file open for writing
+        # so we close it before renaming
+        newfile.close()
+        # On Windows executable templates will have an executable
+        # extensions. We strip that away.
+        path = sanitize_file(path)
         os.rename(newfile.name, path)
 
 
@@ -174,10 +187,6 @@ def render_template(template, config):
             logger.error("%s", e)
             raise exc.ConfigException(
                 "could not render moustache template %s" % template)
-
-
-def is_executable(path):
-    return os.path.isfile(path) and os.access(path, os.X_OK)
 
 
 def render_moustache(text, config):
@@ -241,7 +250,7 @@ def parse_opts(argv):
                         default=TEMPLATES_DIR)
     parser.add_argument('-o', '--output', metavar='OUT_DIR',
                         help='root directory for output (default:%(default)s)',
-                        default='/')
+                        default=DEFAULT_OUTPUT)
     parser.add_argument('-m', '--metadata', metavar='METADATA_FILE', nargs='*',
                         help='Overrides environment variable OS_CONFIG_FILES.'
                         ' Specify multiple times, rather than separate files'
